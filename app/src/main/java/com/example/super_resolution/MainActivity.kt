@@ -16,7 +16,7 @@ import com.example.super_resolution.R
 //    }
 //}
 class MainActivity : AppCompatActivity() {
-    private val pickImage = 100
+    private val pickImage = 1
     private var imageUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
