@@ -11,24 +11,30 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
     private var dividerY: Float = 0f
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
+        val win_width = width
+        val win_height = height
         dividerY = if (dividerY == 0f) height / 2f else dividerY
 
         resImage?.let {
             val rotatedBitmap = rotateBitmap(it, 90f)
+            val scaledBitmap = Bitmap.createScaledBitmap(rotatedBitmap, win_width, win_height, true)
+
             val srcRect = Rect(0, 0, width, dividerY.toInt())
             val dstRect = Rect(0, 0, width, dividerY.toInt())
-            canvas.drawBitmap(rotatedBitmap, srcRect, dstRect, null)
+
+            canvas.drawBitmap(scaledBitmap, srcRect, dstRect, null)
         }
 
         originalImage?.let {
             val rotatedBitmap = rotateBitmap(it, 90f)
+            val scaledBitmap = Bitmap.createScaledBitmap(rotatedBitmap, win_width, win_height, true)
+
             val srcRect = Rect(0, dividerY.toInt(), width, height)
             val dstRect = Rect(0, dividerY.toInt(), width, height)
-            canvas.drawBitmap(rotatedBitmap, srcRect, dstRect, null)
+
+            canvas.drawBitmap(scaledBitmap, srcRect, dstRect, null)
         }
 
-        // Drawing the horizontal divider line
         val paint = Paint().apply {
             color = Color.BLACK
             strokeWidth = 5f
