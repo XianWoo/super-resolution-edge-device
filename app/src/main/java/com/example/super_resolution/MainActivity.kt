@@ -60,6 +60,34 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+//    private fun runPtModule(img: Bitmap) {
+//        try {
+//            // load pytorch module
+//            println("start to load module")
+//            val module = Module.load(assetFilePath(this, "1234.pt"))
+//            println("module loaded")
+//            // set input tensor
+//            val TORCHVISION_NORM_MEAN_RGB = floatArrayOf(0f, 0f, 0f)
+//            val TORCHVISION_NORM_STD_RGB = floatArrayOf(1f, 1f, 1f)
+//            val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
+//                img,
+//                TORCHVISION_NORM_MEAN_RGB,
+//                TORCHVISION_NORM_STD_RGB
+//            )
+//            // run the module
+//            println("start to run module")
+//            val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
+//            println(outputTensor)
+//            // get the output result
+//            val outputImage = customImageView.tensorToBitmap(outputTensor)
+//            customImageView.setResult(outputImage)
+//        } catch (e: IOException) {
+//            Log.e("PytorchHelloWorld", "Error reading assets", e)
+//            finish()
+//        }
+//    }
+
+
     private fun runPtModule(img: Bitmap) {
         try {
             // load pytorch module
