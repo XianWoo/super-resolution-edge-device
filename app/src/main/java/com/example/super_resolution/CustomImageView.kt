@@ -8,6 +8,7 @@ import org.pytorch.Tensor
 import android.graphics.Bitmap
 import android.graphics.Bitmap.createBitmap
 import android.graphics.Color
+import kotlin.math.ceil
 
 class CustomImageView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var resImage: Bitmap? = null
@@ -44,6 +45,50 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
             strokeWidth = 5f
         }
         canvas.drawLine(0f, dividerY, width.toFloat(), dividerY, paint)
+    }
+
+    fun mergeBitmaps(slices: MutableList<Bitmap>, width:Int, height:Int, upscaleFactor: Int): Bitmap {
+        val upscaledWidth = (width * upscaleFactor).toInt()
+        val upscaledHeight = (height * upscaleFactor).toInt()
+
+        // Assuming all slices have the same dimensions and bitmap config
+        val sliceConfig = slices.first().config
+        val upscaledImage = Bitmap.createBitmap(upscaledWidth, upscaledHeight, sliceConfig)
+
+        val xSlices = ceil(upscaledWidth / (96.0 * upscaleFactor)).toInt()
+        val ySlices = ceil(upscaledHeight / (96.0 * upscaleFactor)).toInt()
+
+        var currentSliceIndex = 0
+        for (i in 0 until ySlices) {
+            for (j in 0 until xSlices) {
+                if (currentSliceIndex < slices.size) {
+                    val top = (i * 96 * upscaleFactor).toInt()
+                    val left = (j * 96 * upscaleFactor).toInt()
+                    val slice = slices[currentSliceIndex]
+
+                    // Calculate the dimensions to place the slice correctly
+                    val sliceWidth = slice.width
+                    val sliceHeight = slice.height
+
+                    // Create a temporary bitmap if necessary to adjust the slice dimensions
+                    val tempSlice = if (sliceWidth + left > upscaledWidth || sliceHeight + top > upscaledHeight) {
+                        Bitmap.createScaledBitmap(slice, upscaledWidth - left, upscaledHeight - top, false)
+                    } else {
+                        slice
+                    }
+
+                    for (y in 0 until tempSlice.height) {
+                        for (x in 0 until tempSlice.width) {
+                            val pixel = tempSlice.getPixel(x, y)
+                            upscaledImage.setPixel(left + x, top + y, pixel)
+                        }
+                    }
+                    currentSliceIndex++
+                }
+            }
+        }
+
+        return upscaledImage
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {

@@ -17,6 +17,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import kotlin.math.ceil
 
 class MainActivity : AppCompatActivity() {
     private lateinit var customImageView: CustomImageView
@@ -63,27 +64,70 @@ class MainActivity : AppCompatActivity() {
         try {
             // load pytorch module
             val module = Module.load(assetFilePath(this, "1234.pt"))
-            // set input tensor
-            val TORCHVISION_NORM_MEAN_RGB = floatArrayOf(1f, 1f, 1f)
-            val TORCHVISION_NORM_STD_RGB = floatArrayOf(1f, 1f, 1f)
-            val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
-                img,
-                TORCHVISION_NORM_MEAN_RGB,
-                TORCHVISION_NORM_STD_RGB
-            )
-            // run the module
-            val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
-            println(outputTensor)
-            // get the output result
-            val outputImage = customImageView.tensorToBitmap(outputTensor)
-            customImageView.setResult(outputImage)
+            // set input tensor list
+            val inputImageTensorList = preprocessImage(img)
+            val outputImageList = mutableListOf<Bitmap>()
+            for (inputTensor in inputImageTensorList) {
+                val inputdata = inputTensor.getDataAsFloatArray()
+                // run the module
+                val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
+                // get the output result
+                val outputImage = customImageView.tensorToBitmap(outputTensor)
+                outputImageList.add(outputImage)
+            }
+            val outputBitmap = customImageView.mergeBitmaps(outputImageList,img.width,img.height,3)
+            customImageView.setResult(outputBitmap)
+
+
         } catch (e: IOException) {
             Log.e("PytorchHelloWorld", "Error reading assets", e)
             finish()
         }
     }
 
+    fun preprocessImage(bitmap: Bitmap): List<Tensor> {
+        val slices = mutableListOf<Tensor>()
+        val imageSize = Pair(bitmap.height, bitmap.width)
 
+        val xSlices = Math.ceil(bitmap.width.toDouble() / 96).toInt()
+        val ySlices = Math.ceil(bitmap.height.toDouble() / 96).toInt()
+
+        for (i in 0 until ySlices) {
+            for (j in 0 until xSlices) {
+                val left = j * 96
+                val top = i * 96
+                val right = Math.min((j + 1) * 96, bitmap.width)
+                val bottom = Math.min((i + 1) * 96, bitmap.height)
+                val sliceBitmap = Bitmap.createBitmap(bitmap, left, top, right - left, bottom - top)
+
+                // 将缩放后的 Bitmap 转换为 PyTorch 的 Tensor
+                val TORCHVISION_NORM_MEAN_RGB = floatArrayOf(0f, 0f, 0f)
+                val TORCHVISION_NORM_STD_RGB = floatArrayOf(1f, 1f, 1f)
+                val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
+                    sliceBitmap,
+                    TORCHVISION_NORM_MEAN_RGB,
+                    TORCHVISION_NORM_STD_RGB
+                )
+                slices.add(inputTensor)
+            }
+        }
+        return slices
+    }
+
+//    fun scaleBitmap(bitmap: Bitmap): Bitmap {
+//        val scaledBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config)
+//        for (x in 0 until bitmap.width) {
+//            for (y in 0 until bitmap.height) {
+//                val pixel = bitmap.getPixel(x, y)
+//                val red = Color.red(pixel) / 255f
+//                val green = Color.green(pixel) / 255f
+//                val blue = Color.blue(pixel) / 255f
+//                val scaledPixel = Color.rgb((red * 255).toInt(), (green * 255).toInt(), (blue * 255).toInt())
+//                scaledBitmap.setPixel(x, y, scaledPixel)
+//            }
+//        }
+//        return scaledBitmap
+//    }
     private fun assetFilePath(context: Context, assetName: String): String {
         val file = File(context.filesDir, assetName)
 

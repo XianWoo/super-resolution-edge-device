@@ -45,5 +45,4 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     implementation 'org.pytorch:pytorch_android:1.12.1'
     implementation 'org.pytorch:pytorch_android_torchvision:1.12.1'
-//    implementation 'org.opencv:opencv-android:4.5.4'
 }
