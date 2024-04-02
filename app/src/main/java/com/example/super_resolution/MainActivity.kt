@@ -73,7 +73,7 @@ class MainActivity : AppCompatActivity() {
             println(outputTensor)
             // get the output result
             val outputImage = customImageView.tensorToBitmap(outputTensor)
-            customImageView.setResult(outputImage)
+            customImageView.setResult(img)
         } catch (e: IOException) {
             Log.e("PytorchHelloWorld", "Error reading assets", e)
             finish()
