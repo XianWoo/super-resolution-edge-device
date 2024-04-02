@@ -4,6 +4,11 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import org.pytorch.Tensor
+import android.graphics.Bitmap
+import android.graphics.Bitmap.createBitmap
+import android.graphics.Color
+import kotlin.math.ceil
 
 class CustomImageView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var resImage: Bitmap? = null
@@ -42,6 +47,50 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
         canvas.drawLine(0f, dividerY, width.toFloat(), dividerY, paint)
     }
 
+    fun mergeBitmaps(slices: MutableList<Bitmap>, width:Int, height:Int, upscaleFactor: Int): Bitmap {
+        val upscaledWidth = (width * upscaleFactor).toInt()
+        val upscaledHeight = (height * upscaleFactor).toInt()
+
+        // Assuming all slices have the same dimensions and bitmap config
+        val sliceConfig = slices.first().config
+        val upscaledImage = Bitmap.createBitmap(upscaledWidth, upscaledHeight, sliceConfig)
+
+        val xSlices = ceil(upscaledWidth / (96.0 * upscaleFactor)).toInt()
+        val ySlices = ceil(upscaledHeight / (96.0 * upscaleFactor)).toInt()
+
+        var currentSliceIndex = 0
+        for (i in 0 until ySlices) {
+            for (j in 0 until xSlices) {
+                if (currentSliceIndex < slices.size) {
+                    val top = (i * 96 * upscaleFactor).toInt()
+                    val left = (j * 96 * upscaleFactor).toInt()
+                    val slice = slices[currentSliceIndex]
+
+                    // Calculate the dimensions to place the slice correctly
+                    val sliceWidth = slice.width
+                    val sliceHeight = slice.height
+
+                    // Create a temporary bitmap if necessary to adjust the slice dimensions
+                    val tempSlice = if (sliceWidth + left > upscaledWidth || sliceHeight + top > upscaledHeight) {
+                        Bitmap.createScaledBitmap(slice, upscaledWidth - left, upscaledHeight - top, false)
+                    } else {
+                        slice
+                    }
+
+                    for (y in 0 until tempSlice.height) {
+                        for (x in 0 until tempSlice.width) {
+                            val pixel = tempSlice.getPixel(x, y)
+                            upscaledImage.setPixel(left + x, top + y, pixel)
+                        }
+                    }
+                    currentSliceIndex++
+                }
+            }
+        }
+
+        return upscaledImage
+    }
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         event ?: return false
 
@@ -75,5 +124,56 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
         // get the result image from the model
         // waiting for shanzhi to implement
         return resImage
+    }
+
+    fun transferInputImage(img: Bitmap): Bitmap {
+        // 获取 Bitmap 图像的宽度和高度
+        val width = img.width
+        val height = img.height
+
+// 创建一个新的 Bitmap 用于存储结果
+        val resultBitmap = Bitmap.createBitmap(width, height, img.config)
+
+// 遍历图像的每个像素
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                // 获取当前像素的颜色值
+                val pixel = img.getPixel(x, y)
+
+                // 提取 RGB 参数
+                val r = Color.red(pixel) / 255f
+                val g = Color.green(pixel) / 255f
+                val b = Color.blue(pixel) / 255f
+
+                // 计算新的颜色值并设置到结果图像中
+                val newPixel = Color.rgb((r * 255).toInt(), (g * 255).toInt(), (b * 255).toInt())
+                resultBitmap.setPixel(x, y, newPixel)
+            }
+        }
+        return resultBitmap
+    }
+
+
+    fun tensorToBitmap(outputTensor: Tensor): Bitmap {
+        val width = outputTensor.shape()[3].toInt() // width
+        val height = outputTensor.shape()[2].toInt() // height
+        val pixels = IntArray(width * height)
+
+        // get tensor
+        val outputData = outputTensor.getDataAsFloatArray()
+
+        // change to bitmap
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                val r = (outputData[index] * 255).toInt().coerceIn(0, 255)
+                val g = (outputData[width * height + index] * 255).toInt().coerceIn(0, 255)
+                val b = (outputData[2 * width * height + index] * 255).toInt().coerceIn(0, 255)
+                pixels[index] = Color.rgb(r, g, b)
+            }
+        }
+
+        // createBitmap
+        return createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
     }
 }
