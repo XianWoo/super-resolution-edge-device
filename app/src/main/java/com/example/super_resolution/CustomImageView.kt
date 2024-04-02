@@ -4,6 +4,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import org.pytorch.Tensor
 
 class CustomImageView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var resImage: Bitmap? = null
@@ -75,5 +76,9 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
         // get the result image from the model
         // waiting for shanzhi to implement
         return resImage
+    }
+
+    fun tensorToBitmap(tensor: Tensor): Bitmap {
+        return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888) // Placeholder return value
     }
 }
