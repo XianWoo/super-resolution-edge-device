@@ -81,15 +81,43 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
         return resImage
     }
 
+    fun transferInputImage(img: Bitmap): Bitmap {
+        // 获取 Bitmap 图像的宽度和高度
+        val width = img.width
+        val height = img.height
+
+// 创建一个新的 Bitmap 用于存储结果
+        val resultBitmap = Bitmap.createBitmap(width, height, img.config)
+
+// 遍历图像的每个像素
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                // 获取当前像素的颜色值
+                val pixel = img.getPixel(x, y)
+
+                // 提取 RGB 参数
+                val r = Color.red(pixel) / 255f
+                val g = Color.green(pixel) / 255f
+                val b = Color.blue(pixel) / 255f
+
+                // 计算新的颜色值并设置到结果图像中
+                val newPixel = Color.rgb((r * 255).toInt(), (g * 255).toInt(), (b * 255).toInt())
+                resultBitmap.setPixel(x, y, newPixel)
+            }
+        }
+        return resultBitmap
+    }
+
+
     fun tensorToBitmap(outputTensor: Tensor): Bitmap {
-        val width = outputTensor.shape()[3].toInt() // 图像宽度
-        val height = outputTensor.shape()[2].toInt() // 图像高度
+        val width = outputTensor.shape()[3].toInt() // width
+        val height = outputTensor.shape()[2].toInt() // height
         val pixels = IntArray(width * height)
 
-        // 获取张量数据
+        // get tensor
         val outputData = outputTensor.getDataAsFloatArray()
 
-        // 调整像素值范围并转换为 Bitmap
+        // change to bitmap
         for (y in 0 until height) {
             for (x in 0 until width) {
                 val index = y * width + x
@@ -100,7 +128,7 @@ class CustomImageView(context: Context, attrs: AttributeSet) : View(context, att
             }
         }
 
-        // 创建 Bitmap
+        // createBitmap
         return createBitmap(pixels, width, height, Bitmap.Config.ARGB_8888)
     }
 }

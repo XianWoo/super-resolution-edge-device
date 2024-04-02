@@ -3,17 +3,18 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import java.io.File
-import java.io.FileOutputStream
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
 import org.pytorch.torchvision.TensorImageUtils
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 
@@ -63,46 +64,27 @@ class MainActivity : AppCompatActivity() {
             // load pytorch module
             val module = Module.load(assetFilePath(this, "1234.pt"))
             // set input tensor
+            val TORCHVISION_NORM_MEAN_RGB = floatArrayOf(1f, 1f, 1f)
+            val TORCHVISION_NORM_STD_RGB = floatArrayOf(1f, 1f, 1f)
             val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
                 img,
-                TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
-                TensorImageUtils.TORCHVISION_NORM_STD_RGB
+                TORCHVISION_NORM_MEAN_RGB,
+                TORCHVISION_NORM_STD_RGB
             )
             // run the module
             val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
             println(outputTensor)
             // get the output result
             val outputImage = customImageView.tensorToBitmap(outputTensor)
-            customImageView.setResult(img)
+            customImageView.setResult(outputImage)
         } catch (e: IOException) {
             Log.e("PytorchHelloWorld", "Error reading assets", e)
             finish()
         }
     }
 
-    private fun assetFilePath(context: Context, assetName: String): String {
-//        val file = File(context.filesDir, assetName)
-//        if (file.exists() && file.length() > 0) {
-//            println("path"+file.absolutePath)
-//            return file.absolutePath
-//        }
-//        try {
-//            context.assets.open(assetName).use { inputStream ->
-//                FileOutputStream(file).use { outputStream ->
-//                    val buffer = ByteArray(4 * 1024)
-//                    var read: Int
-//                    while (inputStream.read(buffer).also { read = it } != -1) {
-//                        outputStream.write(buffer, 0, read)
-//                    }
-//                    outputStream.flush()
-//                }
-//            }
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//        }
-//        println("path"+file.absolutePath)
-//        return file.absolutePath
 
+    private fun assetFilePath(context: Context, assetName: String): String {
         val file = File(context.filesDir, assetName)
 
         try {
