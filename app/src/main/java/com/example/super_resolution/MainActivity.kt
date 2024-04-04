@@ -29,21 +29,15 @@ class MainActivity : AppCompatActivity() {
         customImageView = findViewById(R.id.customImageView)
 
         findViewById<Button>(R.id.buttonImage1).setOnClickListener {
-            pickImage(1)
-//            genRequestCode(1)
-        }
-
-        findViewById<Button>(R.id.buttonImage2).setOnClickListener {
-            pickImage(2)
-//            genRequestCode(2)
+            pickImage()
         }
     }
 
-    private fun pickImage(requestCode: Int) {
+    private fun pickImage() {
         val intent = Intent()
         intent.type = "image/*"
         intent.action = Intent.ACTION_GET_CONTENT
-        startActivityForResult(Intent.createChooser(intent, "Select Picture"), requestCode)
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), 200)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -52,16 +46,11 @@ class MainActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK && data != null) {
             val imageUri = data.data
             val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, imageUri)
-
-
-            // Set the image to the CustomImageView based on the request code to differentiate between the two images
-            when (requestCode) {
-                1 -> customImageView.setUploadImage(bitmap)
-//                2 -> customImageView.setResult(bitmap)
-                2 -> runPtModule(bitmap)
-            }
+            customImageView.setUploadImage(bitmap)
+            runPtModule(bitmap)
         }
     }
+
 
 //    private fun runPtModule(img: Bitmap) {
 //        try {

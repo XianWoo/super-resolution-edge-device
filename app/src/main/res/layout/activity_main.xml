@@ -43,11 +43,6 @@
             android:layout_height="wrap_content"
             android:text="Upload" />
 
-        <Button
-            android:id="@+id/buttonImage2"
-            android:layout_width="80pt"
-            android:layout_height="wrap_content"
-            android:text="Regenerate"/>
     </LinearLayout>
 
     <View
