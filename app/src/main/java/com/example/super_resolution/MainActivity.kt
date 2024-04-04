@@ -30,10 +30,12 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.buttonImage1).setOnClickListener {
             pickImage(1)
+//            genRequestCode(1)
         }
 
         findViewById<Button>(R.id.buttonImage2).setOnClickListener {
             pickImage(2)
+//            genRequestCode(2)
         }
     }
 
@@ -50,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK && data != null) {
             val imageUri = data.data
             val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, imageUri)
+
 
             // Set the image to the CustomImageView based on the request code to differentiate between the two images
             when (requestCode) {
@@ -87,25 +90,31 @@ class MainActivity : AppCompatActivity() {
 //        }
 //    }
 
-
     private fun runPtModule(img: Bitmap) {
         try {
             // load pytorch module
-            val module = Module.load(assetFilePath(this, "1234.pt"))
+            val module = Module.load(assetFilePath(this, "bicubicpp.pt"))
             // set input tensor list
-            val inputImageTensorList = preprocessImage(img)
-            val outputImageList = mutableListOf<Bitmap>()
-            for (inputTensor in inputImageTensorList) {
-                val inputdata = inputTensor.getDataAsFloatArray()
-                // run the module
-                val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
-                // get the output result
-                val outputImage = customImageView.tensorToBitmap(outputTensor)
-                outputImageList.add(outputImage)
-            }
-            val outputBitmap = customImageView.mergeBitmaps(outputImageList,img.width,img.height,3)
-            customImageView.setResult(outputBitmap)
-
+            //val inputImageTensorList = preprocessImage(img)
+            //val outputImageList = mutableListOf<Bitmap>()
+            //for (inputTensor in inputImageTensorList) {
+            // 将缩放后的 Bitmap 转换为 PyTorch 的 Tensor
+            val TORCHVISION_NORM_MEAN_RGB = floatArrayOf(0f, 0f, 0f)
+            val TORCHVISION_NORM_STD_RGB = floatArrayOf(1f, 1f, 1f)
+            val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
+                img,
+                TORCHVISION_NORM_MEAN_RGB,
+                TORCHVISION_NORM_STD_RGB
+            )
+            //val inputdata = inputTensor.getDataAsFloatArray()
+            // run the module
+            val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
+            // get the output result
+            val outputImage = customImageView.tensorToBitmap(outputTensor)
+            //outputImageList.add(outputImage)
+            //}
+            //val outputBitmap = customImageView.mergeBitmaps(outputImageList,img.width,img.height,3)
+            customImageView.setResult(outputImage)
 
         } catch (e: IOException) {
             Log.e("PytorchHelloWorld", "Error reading assets", e)
@@ -113,6 +122,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // slice + merge images (runPtModule, preprocessImage)
+
+    //    private fun runPtModule(img: Bitmap) {
+//        try {
+//            // load pytorch module
+//            val module = Module.load(assetFilePath(this, "fast.pt"))
+//            // set input tensor list
+//            val inputImageTensorList = preprocessImage(img)
+//            val outputImageList = mutableListOf<Bitmap>()
+//            for (inputTensor in inputImageTensorList) {
+//                val inputdata = inputTensor.getDataAsFloatArray()
+//                // run the module
+//                val outputTensor = module.forward(IValue.from(inputTensor)).toTensor()
+//                // get the output result
+//                val outputImage = customImageView.tensorToBitmap(outputTensor)
+//                outputImageList.add(outputImage)
+//            }
+//            val outputBitmap = customImageView.mergeBitmaps(outputImageList,img.width,img.height,3)
+//            customImageView.setResult(outputBitmap)
+//
+//
+//        } catch (e: IOException) {
+//            Log.e("PytorchHelloWorld", "Error reading assets", e)
+//            finish()
+//        }
+//    }
     fun preprocessImage(bitmap: Bitmap): List<Tensor> {
         val slices = mutableListOf<Tensor>()
         val imageSize = Pair(bitmap.height, bitmap.width)
