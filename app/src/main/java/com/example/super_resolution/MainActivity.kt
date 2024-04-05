@@ -1,5 +1,6 @@
 package com.example.super_resolution
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -31,7 +32,36 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.buttonImage1).setOnClickListener {
             pickImage()
         }
+
+//        findViewById<Button>(R.id.buttonSelectModel).setOnClickListener {
+//            showModelSelectionDialog()
+//        }
     }
+
+    private fun showModelSelectionDialog(bitmap: Bitmap) {
+        val models = arrayOf("bicubicpp", "esrt", "new model")
+        AlertDialog.Builder(this)
+            .setTitle("Select a Model")
+            .setItems(models) { dialog, which ->
+
+                when (which) {
+                    0 -> useModel(bitmap,"A")
+                    1 -> useModel(bitmap,"B")
+                    2 -> useModel(bitmap,"C")
+                    else -> Log.e("MainActivity", "Unknown model selected")
+                }
+            }
+            .show()
+    }
+
+    private fun useModel(bitmap: Bitmap, modelId: String) {
+        when (modelId) {
+            "A" -> runPtModule(bitmap, "bicubicpp.pt")
+            "B" -> runPtModule(bitmap, "esrt.pt")
+            "C" -> runPtModule(bitmap, "zsznbbest.pt")
+        }
+    }
+
 
     private fun pickImage() {
         val intent = Intent()
@@ -47,7 +77,8 @@ class MainActivity : AppCompatActivity() {
             val imageUri = data.data
             val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, imageUri)
             customImageView.setUploadImage(bitmap)
-            runPtModule(bitmap)
+            showModelSelectionDialog(bitmap)
+//            runPtModule(bitmap)
         }
     }
 
@@ -79,10 +110,10 @@ class MainActivity : AppCompatActivity() {
 //        }
 //    }
 
-    private fun runPtModule(img: Bitmap) {
+    private fun runPtModule(img: Bitmap, modelId: String) {
         try {
             // load pytorch module
-            val module = Module.load(assetFilePath(this, "bicubicpp.pt"))
+            val module = Module.load(assetFilePath(this, modelId))
             // set input tensor list
             //val inputImageTensorList = preprocessImage(img)
             //val outputImageList = mutableListOf<Bitmap>()
